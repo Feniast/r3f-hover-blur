@@ -4,9 +4,18 @@ uniform sampler2D uImg;
 uniform vec2 uMouse;
 uniform float uRadius;
 uniform vec2 uResolution;
+uniform float uBlurIntensity;
 uniform float uThreshold;
 uniform float uSoftness;
 uniform float uTime;
+uniform float uNoise1Size;
+uniform float uNoise1Freq;
+uniform float uNoise2Size;
+uniform float uNoise2Freq;
+uniform float uNoise2Factor;
+uniform float uNoise3Size;
+uniform float uNoise3Freq;
+uniform float uNoise3Factor;
 
 vec3 mod289(vec3 x) {
   return x - floor(x * (1.0 / 289.0)) * 289.0;
@@ -118,17 +127,13 @@ void main() {
     vec3 invertedColor = vec3(1.0) - color.rgb;
     vec2 circlePos = (vUv - uMouse) * vec2(1., uResolution.y / uResolution.x);
     float progress = circle(circlePos, uRadius, uBlur);
-    // gl_FragColor = vec4(vUv, 0.0, 1.0);
     float nx = vUv.x + cos(vUv.y + uTime * 0.01);
-    float ny = vUv.y - cos(uTime) * 0.01 ;
-    float s1 = snoise(vec3(nx, ny, uTime * .1) * 4.) - 1.;
-    float s2 = snoise(vec3(nx, ny, uTime * .001) * 19.) - 1.;
-    float s3 = snoise(vec3(nx, ny, uTime * .001) * 142.) - 1.;
-    // float s1 = snoise(vec3(nx, ny, uTime * 0.078)) - 0.866;
-    // float s2 = snoise(vec3(nx * 98., ny * 136., uTime * 1.)) - 0.866;
-    // float s3 = snoise(vec3(nx * 30., ny * 78., uTime * 0.235)) * sin(uTime * 0.1) - 0.866;
-    float s = s1 * (1. - s2 * 0.74) * (1. - s3 * 0.19);
-    float mask = smoothstep(uThreshold - uSoftness, uThreshold, s + progress * 4.6);
+    float ny = vUv.y - cos(uTime) * 0.01 - sin(uTime * .0001) * .01;
+    float s1 = snoise(vec3(nx * uNoise1Size, ny * uNoise1Size, uTime * uNoise1Freq)) - 0.866;
+    float s2 = snoise(vec3(nx * uNoise2Size, ny * uNoise2Size, uTime * uNoise2Freq)) - 0.866;
+    float s3 = snoise(vec3(nx * uNoise3Size, ny * uNoise3Size, uTime * uNoise3Freq)) - 0.866;
+    float s = s1 * (1. - s2 * uNoise2Factor) * (1. - s3 * uNoise3Factor); // since s1, s2, s3 are all negative, so the result here is negative
+    float mask = smoothstep(uThreshold - uSoftness, uThreshold, s + progress * uBlurIntensity);
     gl_FragColor = vec4(mix(color.rgb, invertedColor.rgb, mask), 1.0);
   } else {
     gl_FragColor = color;
