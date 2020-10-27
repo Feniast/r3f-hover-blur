@@ -2,19 +2,12 @@ import React, {
   useRef,
   Suspense,
   useMemo,
-  useLayoutEffect,
-  useState,
-  useEffect,
-  useCallback,
 } from "react";
 import {
   Canvas,
-  useFrame,
-  ReactThreeFiber,
   extend,
+  useFrame,
   useThree,
-  useUpdate,
-  createPortal,
 } from "react-three-fiber";
 import * as THREE from "three";
 import {
@@ -27,9 +20,7 @@ import * as dat from "dat.gui";
 import { useDeepMemo, useDeepCompareEffect } from "./useDeep";
 import vertex from "./shader/vertex.glsl";
 import fragment from "./shader/fragment.glsl";
-import { PerspectiveCamera, PlaneBufferGeometry, TypedArray } from "three";
 import image1 from "url:./assets/img1.jpg";
-import { PointerEvent } from "react-three-fiber/canvas";
 import { useSpring } from "react-spring";
 import {
   Bloom,
@@ -204,7 +195,6 @@ const Image = () => {
   const { viewport, size, camera, aspect, clock, events } = useThree();
   const texture = useTexture(image1) as THREE.Texture;
   const img = texture.image as HTMLImageElement;
-  const mouse = useRef<THREE.Vector2>(new THREE.Vector2(0, 0));
   const [hoverProps, set] = useSpring(() => ({
     radius: 0,
   }));
@@ -228,11 +218,6 @@ const Image = () => {
     sy = sizeScale * viewport.height;
     sx = sy * imageAspect;
   }
-
-  const onPointerMove = useCallback((e: PointerEvent) => {
-    mouse.current.x = e.uv.x;
-    mouse.current.y = e.uv.y;
-  }, []);
 
   const material = useRef<THREE.ShaderMaterial>();
 
@@ -263,7 +248,6 @@ const Image = () => {
           radius: maxRadius,
         });
       }}
-      onPointerMove={onPointerMove}
       onPointerOut={(e) => {
         set({
           radius: 0,
