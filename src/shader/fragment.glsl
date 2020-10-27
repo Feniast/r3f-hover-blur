@@ -125,7 +125,8 @@ void main() {
   vec4 color = vec4(grayscale(sourceColor.rgb), sourceColor.a);
   if (uRadius > 0.001) {
     vec3 invertedColor = vec3(1.0) - color.rgb;
-    vec2 circlePos = (vUv - uMouse) * vec2(1., uResolution.y / uResolution.x);
+    vec2 screenPos = gl_FragCoord.xy / uResolution - vec2(0.5);
+    vec2 circlePos = (screenPos - uMouse * 0.5) * vec2(1., uResolution.y / uResolution.x);
     float progress = circle(circlePos, uRadius, uBlur);
     float nx = vUv.x + cos(vUv.y + uTime * 0.01);
     float ny = vUv.y - cos(uTime) * 0.01 - sin(uTime * .0001) * .01;

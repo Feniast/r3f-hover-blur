@@ -17,7 +17,12 @@ import {
   createPortal,
 } from "react-three-fiber";
 import * as THREE from "three";
-import { OrbitControls, shaderMaterial, useTexture, Html } from "@react-three/drei";
+import {
+  OrbitControls,
+  shaderMaterial,
+  useTexture,
+  Html,
+} from "@react-three/drei";
 import * as dat from "dat.gui";
 import { useDeepMemo, useDeepCompareEffect } from "./useDeep";
 import vertex from "./shader/vertex.glsl";
@@ -26,7 +31,12 @@ import { PerspectiveCamera, PlaneBufferGeometry, TypedArray } from "three";
 import image1 from "url:./assets/img1.jpg";
 import { PointerEvent } from "react-three-fiber/canvas";
 import { useSpring } from "react-spring";
-import { Bloom, EffectComposer, Noise, Vignette } from "@react-three/postprocessing";
+import {
+  Bloom,
+  EffectComposer,
+  Noise,
+  Vignette,
+} from "@react-three/postprocessing";
 
 interface DatGuiSetting {
   value: string | number | undefined;
@@ -102,27 +112,39 @@ const useDatGui = <T extends Record<string, DatGuiSetting>>(settings: T) => {
   return obj;
 };
 
-const maxRadius = 0.1;
+const maxRadius = 0.08;
+
+const mousePos = new THREE.Vector2(0, 0);
+
+const normalizeMousePos = (
+  point: { x: number; y: number },
+  rect: { width: number; height: number; left: number; top: number }
+) => {
+  return new THREE.Vector2(
+    ((point.x - rect.left) / rect.width) * 2 - 1,
+    -(((point.y - rect.top) / rect.height) * 2 - 1)
+  );
+};
 
 const Image = () => {
   const settings = useDatGui({
     blur: {
-      value: 0.8,
+      value: 0.6,
       min: 0,
       max: 10,
-      step: 0.01
+      step: 0.01,
     },
     blurIntensity: {
       value: 4.6,
       min: 0,
       max: 20,
-      step: 0.1
+      step: 0.1,
     },
     threshold: {
-      value: 0.4,
+      value: 0.6,
       min: 0,
       max: 1,
-      step: 0.01
+      step: 0.01,
     },
     softness: {
       value: 0.2,
@@ -140,7 +162,7 @@ const Image = () => {
       value: 0.3,
       min: 0.001,
       max: 1,
-      step: 0.001
+      step: 0.001,
     },
     noise2Size: {
       value: 20,
@@ -149,37 +171,37 @@ const Image = () => {
       step: 0.1,
     },
     noise2Freq: {
-      value: 0.020,
+      value: 0.02,
       min: 0.001,
       max: 1,
-      step: 0.001
+      step: 0.001,
     },
     noise2Factor: {
       value: 0.75,
       min: 0,
       max: 1,
-      step: 0.01
+      step: 0.01,
     },
     noise3Size: {
       value: 150,
       min: 1,
       max: 200,
-      step: 0.1
+      step: 0.1,
     },
     noise3Freq: {
-      value: 0.150,
+      value: 0.15,
       min: 0.001,
       max: 1,
-      step: 0.001
+      step: 0.001,
     },
     noise3Factor: {
       value: 0.1,
       min: 0,
       max: 1,
-      step: 0.01
+      step: 0.01,
     },
-  })
-  const { viewport, size, camera, aspect, clock } = useThree();
+  });
+  const { viewport, size, camera, aspect, clock, events } = useThree();
   const texture = useTexture(image1) as THREE.Texture;
   const img = texture.image as HTMLImageElement;
   const mouse = useRef<THREE.Vector2>(new THREE.Vector2(0, 0));
@@ -188,9 +210,8 @@ const Image = () => {
   }));
 
   const resolution = useMemo(() => {
-    if (!img) return new THREE.Vector2(0, 0);
-    return new THREE.Vector2(img.naturalWidth, img.naturalHeight);
-  }, [img]);
+    return new THREE.Vector2(size.width, size.height);
+  }, [size.width, size.height]);
   // compute the plane size which is in camera's viewport, if the z coordinate of the current item is not 0, use the following calculation
   // let z = 0;
   // const h = 2 * Math.tan((camera as PerspectiveCamera).fov * Math.PI / 180 / 2) * (camera.position.z - z);
@@ -217,7 +238,7 @@ const Image = () => {
 
   useFrame(() => {
     material.current.uniforms.uRadius.value = hoverProps.radius.getValue();
-    material.current.uniforms.uMouse.value = mouse.current;
+    material.current.uniforms.uMouse.value = normalizeMousePos(mousePos, size);
     material.current.uniforms.uTime.value = clock.getElapsedTime();
 
     material.current.uniforms.uBlur.value = settings.blur;
@@ -246,6 +267,7 @@ const Image = () => {
       onPointerOut={(e) => {
         set({
           radius: 0,
+          delay: 2000,
         });
       }}
     >
@@ -272,6 +294,10 @@ const Scene = () => {
 const App = () => {
   return (
     <Canvas
+      onMouseMove={(e) => {
+        mousePos.x = e.clientX;
+        mousePos.y = e.clientY;
+      }}
       colorManagement
       onCreated={({ gl }) => {
         gl.setClearColor(0x999999);
